@@ -49,9 +49,6 @@ namespace Authentication
             {
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(Convert.ToDouble(5));
                 options.Lockout.MaxFailedAccessAttempts = Convert.ToInt32(3);
-
-                //Added by Rajiv
-                //options.SignIn.RequireConfirmedEmail = true;
             })
             .AddEntityFrameworkStores<PlatformDbContext>()
             .AddDefaultTokenProviders();
