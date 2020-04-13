@@ -36,22 +36,26 @@ namespace Authentication
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddDbContext<PlatformDbContext>(options =>
-
-            options.UseSqlServer(
+                options.UseSqlServer(
                     Configuration.GetConnectionString("AuthenticationConnectionString"),
                     sqlServerOptionsAction: sqlOptions =>
                     {
                         sqlOptions.MigrationsAssembly(typeof(Startup).GetTypeInfo().Assembly.GetName().Name);
                         sqlOptions.EnableRetryOnFailure(maxRetryCount: 15, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null);
-                    }));
+                    }
+                )
+            );
 
             services.AddIdentity<PlatformUser, PlatformRole>(options =>
             {
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(Convert.ToDouble(5));
-                options.Lockout.MaxFailedAccessAttempts = Convert.ToInt32(3);
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(Convert.ToDouble(Configuration.GetSection("DefaultLockoutTimeSpanValue").Value));
+                options.Lockout.MaxFailedAccessAttempts = Convert.ToInt32(Configuration.GetSection("MaxFailedAccessAttemptValue").Value);
             })
             .AddEntityFrameworkStores<PlatformDbContext>()
             .AddDefaultTokenProviders();
+
+            services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromMinutes(Convert.ToInt32(Configuration.GetSection("TokenLifeSpan").Value)));
+
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 
             services.AddTransient<ILoginService<PlatformUser>, LoginService>();
@@ -61,8 +65,6 @@ namespace Authentication
                 x.IssuerUri = "null";
                 x.Authentication.CookieLifetime = TimeSpan.FromHours(2);
             })
-           //.AddDevspacesIfNeeded(Configuration.GetValue("EnableDevspaces", false))
-           //.AddSigningCredential(Certificate.Get())
            .AddDeveloperSigningCredential()
            .AddAspNetIdentity<PlatformUser>()
            .AddConfigurationStore(options =>

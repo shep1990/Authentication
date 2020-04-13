@@ -14,7 +14,8 @@
                 <div class="col-12">
                     <section class="register">
                         <h1 class="text-lg-center">Join Up</h1>
-                        <form asp-controller="Account" asp-action="register" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post" novalidate>
+                        <form method="post" action="@Url.Action("Register", "Account")" novalidate>
+                            @Html.HiddenFor(x => x.ReturnUrl)
                             <fieldset class="auth-info">
                                 <div class="form-label-group-wrapper">
                                     <div class="form-label-group">
@@ -55,7 +56,7 @@
                                 <button class="bttn bttn-primary bttn-submit" type="submit">Create Account</button>
                             </fieldset>
                         </form>
-                        <p class="text-center">Already have an account<a asp-area="" asp-controller="Account" asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">Sign In</a></p>
+                        <p class="text-center">Already have an account<a href="@Url.Action("Login", "Account")">Sign In</a></p>
                     </section>
                 </div>
             </div>

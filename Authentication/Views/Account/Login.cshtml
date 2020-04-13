@@ -3,39 +3,34 @@
 @model Authentication.Models.LoginViewModel
 
 <body class="sign-in sign-up">
-    <header class="not-signed-in d-flex flex-row justify-content-between fixed-top">
-        <img src="~/images/logo.png"
-             alt="logo">
-    </header>
     <main>
         <div class="container">
             <div class="row">
                 <div class="col-12">
                     <section class="sign-in">
                         <h1 class="text-lg-center">Sign in</h1>
-                        <form asp-controller="Account" asp-action="Login" method="post" novalidate>
-                            <input type="hidden" asp-for="ReturnUrl" />
+                        <form method="post" action="@Url.Action("Login", "Account")" novalidate>
+                            @Html.HiddenFor(x => x.ReturnUrl)
                             <fieldset class="auth-info">
                                 <div class="form-label-group-wrapper">
                                     <div class="form-label-group">
                                         @Html.TextBoxFor(m => m.Email, new { @class = "form-control", required = "required", aria_label = "email", aria_describedby = "email", placeholder = "Email", type = "email" })
-                                        @Html.LabelFor(m => m.Email)
+                                    </div>
+                                    <div class="invalid-field">
+                                        @Html.ValidationMessageFor(x => x.Email)
                                     </div>
                                 </div>
                                 <div class="form-label-group-wrapper">
                                     <div class="form-label-group">
-                                        @Html.TextBoxFor(m => m.Password, new { @class = "form-control", required = "required", aria_label = "password", aria_describedby = "password", placeholder = "password", type = "password", id = "password-field" })
-                                        @Html.LabelFor(m => m.Password)
-                                        <div id="pass-status" class="fa fa-eye" aria-hidden="true" onclick="viewPassword()"></div>
                                     </div>
+                                    @Html.TextBoxFor(m => m.Password, new { @class = "form-control", required = "required", aria_label = "password", aria_describedby = "password", placeholder = "password", type = "password", id = "password-field" })
                                     <div class="invalid-field">
                                         @Html.ValidationMessageFor(x => x.Password)
                                     </div>
                                 </div><button class="bttn bttn-primary bttn-submit" type="submit">Sign In</button>
                             </fieldset>
                         </form>
-                        <p class="text-center"><a asp-area="" asp-controller="Account" asp-action="ForgotPassword" asp-route-returnUrl="@ViewData["ReturnUrl"]">Forgot Password</a></p>
-                        <p class="text-center"><a asp-area="" asp-controller="Account" asp-action="Register" asp-route-returnUrl="@ViewData["ReturnUrl"]">Sign Up Now</a></p>
+                        <p class="text-center"><a href="@Url.Action("Register", "Account", new { returnUrl = Model.ReturnUrl })">Sign Up Now</a></p>
                     </section>
                 </div>
             </div>

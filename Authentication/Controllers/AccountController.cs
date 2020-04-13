@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Authentication.Domain.Model;
 using Authentication.Domain.Services;
 using Authentication.Models;
+using Authentication.Resources;
 using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
@@ -56,8 +57,6 @@ namespace Authentication.Controllers
 
             var vm = await BuildLoginViewModelAsync(returnUrl, context);
 
-            ViewData["ReturnUrl"] = returnUrl;
-
             return View(vm);
         }
 
@@ -80,7 +79,7 @@ namespace Authentication.Controllers
 
                     var props = new AuthenticationProperties
                     {
-                        ExpiresUtc = System.DateTimeOffset.UtcNow.AddMinutes(tokenLifetime),
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(tokenLifetime),
                         AllowRefresh = true,
                         RedirectUri = model.ReturnUrl
                     };
@@ -91,34 +90,39 @@ namespace Authentication.Controllers
                     {
                         return Redirect(model.ReturnUrl);
                     }
+                }
 
-                    return Redirect("Account/Manage");
+                if (login.IsLockedOut)
+                {
+                    ModelState.AddModelError("Password", String.Format(Strings.NumberOfLoginAttemptsExceeded, _configuration.GetSection("DefaultLockoutTimeSpanValue").Value));
+                }
+                else
+                {
+                    ModelState.AddModelError("Password", Strings.EmailAndPasswordIncorrect);
                 }
             }
 
             var vm = await BuildLoginViewModelAsync(model);
-
-            ViewData["ReturnUrl"] = model.ReturnUrl;
 
             return View(vm);
         }
 
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult Register(string returnUrl = null)
+        public IActionResult Register(string returnUrl)
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            return View();
+            var registerViewModel = new RegisterViewModel
+            {
+                ReturnUrl = returnUrl
+            };
+            return View(registerViewModel);
         }
 
 
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model, string returnUrl = null)
+        public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            ViewData["ReturnUrl"] = returnUrl;
-            //Check if user with this email has already registered
             var existingUser = await _loginService.FindByUsername(model.Email);
 
             if (ModelState.IsValid)
@@ -133,24 +137,33 @@ namespace Authentication.Controllers
 
                 if (result.Succeeded)
                 {
-                    user = await _userManager.FindByEmailAsync(model.Email);
-                    if (user != null)
-                    {
-                        var accessToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-                    }
+                    return RedirectToAction("Login", "Account");
+                }
+
+                if (result.Errors.Count() > 0)
+                {
+                    AddErrors(result);
+
                     return View(model);
                 }
             }
+            if (existingUser != null)
+            {
+                ModelState.AddModelError("Email", Strings.DuplicateEmail);
+                return View();
+            }
 
-            if (returnUrl != null)
+            if (model.ReturnUrl != null)
             {
                 if (HttpContext.User.Identity.IsAuthenticated)
-                    return Redirect(returnUrl);
-                else
-                    if (ModelState.IsValid)
-                    return RedirectToAction("login", "account", new { returnUrl = returnUrl });
-                else
-                    return View(model);
+                {
+                    return Redirect(model.ReturnUrl);
+                }
+                else if (ModelState.IsValid)
+                {
+                    return RedirectToAction("login", "account", new { model.ReturnUrl });
+                }
+                return View(model);
             }
 
             return RedirectToAction("Login", "Account");
@@ -159,13 +172,12 @@ namespace Authentication.Controllers
 
         private async Task<LoginViewModel> BuildLoginViewModelAsync(string returnUrl, AuthorizationRequest context)
         {
-            var allowLocal = true;
             if (context?.ClientId != null)
             {
                 var client = await _clientStore.FindEnabledClientByIdAsync(context.ClientId);
                 if (client != null)
                 {
-                    allowLocal = client.EnableLocalLogin;
+                    var allowLocal = client.EnableLocalLogin;
                 }
             }
 
@@ -174,12 +186,21 @@ namespace Authentication.Controllers
                 ReturnUrl = returnUrl
             };
         }
+
         private async Task<LoginViewModel> BuildLoginViewModelAsync(LoginViewModel model)
         {
             var context = await _interaction.GetAuthorizationContextAsync(model.ReturnUrl);
             var vm = await BuildLoginViewModelAsync(model.ReturnUrl, context);
             vm.Email = model.Email;
             return vm;
+        }
+
+        private void AddErrors(IdentityResult result)
+        {
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
         }
     }
 }

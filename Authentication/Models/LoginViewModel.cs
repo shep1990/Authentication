@@ -1,18 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Authentication.Resources;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Authentication.Models
 {
     public class LoginViewModel
     {
-        [Required]
+        [Required(ErrorMessageResourceName = nameof(Strings.EmailError), ErrorMessageResourceType = typeof(Strings))]
         [EmailAddress]
         public string Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessageResourceName = nameof(Strings.PasswordError), ErrorMessageResourceType = typeof(Strings))]
         [DataType(DataType.Password)]
         public string Password { get; set; }
 
