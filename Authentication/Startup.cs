@@ -1,16 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Authentication.Migrations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Authentication.Domain.Data;
@@ -20,6 +13,7 @@ using IdentityServer4.Services;
 using Authentication.Domain.Services;
 using IdentityServer4.EntityFramework.DbContexts;
 using Authentication.Data;
+using Authetication.WebApiClient;
 
 namespace Authentication
 {
@@ -45,6 +39,9 @@ namespace Authentication
                     }
                 )
             );
+
+            //todo: set up auth api url
+            services.AddTransient(x => AuthWebApiClientFactory.Create(Configuration.GetSection("AuthApi").Value));
 
             services.AddIdentity<PlatformUser, PlatformRole>(options =>
             {

@@ -7,6 +7,7 @@ using Authentication.Domain.Model;
 using Authentication.Domain.Services;
 using Authentication.Models;
 using Authentication.Resources;
+using Authetication.WebApiClient;
 using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
@@ -26,6 +27,7 @@ namespace Authentication.Controllers
         private readonly UserManager<PlatformUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly UrlEncoder _urlEncoder;
+        private readonly IAuthWebApiClient _authWebApiClient;
 
         public AccountController(
             ILoginService<PlatformUser> loginService,
@@ -33,7 +35,8 @@ namespace Authentication.Controllers
             IClientStore clientStore,
             UserManager<PlatformUser> userManager,
             IConfiguration configuration,
-            UrlEncoder urlEncoder
+            UrlEncoder urlEncoder,
+            IAuthWebApiClient authWebApiClient
         )
         {
             _loginService = loginService;
@@ -42,7 +45,8 @@ namespace Authentication.Controllers
             _userManager = userManager;
             _configuration = configuration;
             _urlEncoder = urlEncoder;
-        }
+            _authWebApiClient = authWebApiClient;
+    }
 
         [HttpGet]
         [AllowAnonymous]
@@ -125,7 +129,7 @@ namespace Authentication.Controllers
         {
             var existingUser = await _loginService.FindByUsername(model.Email);
 
-            if (ModelState.IsValid)
+            if (ModelState.IsValid && existingUser == null)
             {
                 var user = new PlatformUser
                 {
@@ -134,6 +138,24 @@ namespace Authentication.Controllers
                 };
 
                 var result = await _userManager.CreateAsync(user, model.Password);
+
+                var userId = await _loginService.FindByUsername(model.Email);
+
+                // Save today's date.
+                var today = DateTime.Today;
+                // Calculate the age.
+                var age = today.Year - model.DateOfBirth.Year;
+                // Go back to the year the person was born in case of a leap year
+                if (model.DateOfBirth.Date > today.AddYears(-age)) age--;
+
+                await _authWebApiClient.CreateProfile(new Domain.Dto.RegisterDto
+                {
+                    Id = userId.Id,
+                    Name = model.Name,
+                    DateOfBirth = model.DateOfBirth,
+                    Age = age,
+                    Email = model.Email
+                });
 
                 if (result.Succeeded)
                 {

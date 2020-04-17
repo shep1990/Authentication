@@ -19,6 +19,16 @@
                             <fieldset class="auth-info">
                                 <div class="form-label-group-wrapper">
                                     <div class="form-label-group">
+                                        @Html.TextBoxFor(m => m.Name, new { @class = "form-control", required = "required", aria_label = "email", aria_describedby = "name", placeholder = "Name" })
+                                        @Html.LabelFor(m => m.Name)
+                                    </div>
+                                    <div class="invalid-field">
+                                        @Html.ValidationMessageFor(x => x.Name)
+                                    </div>
+                                </div>
+
+                                <div class="form-label-group-wrapper">
+                                    <div class="form-label-group">
                                         @Html.TextBoxFor(m => m.Email, new { @class = "form-control", required = "required", aria_label = "email", aria_describedby = "email", placeholder = "Email", type = "email" })
                                         @Html.LabelFor(m => m.Email)
                                     </div>
@@ -26,6 +36,17 @@
                                         @Html.ValidationMessageFor(x => x.Email)
                                     </div>
                                 </div>
+
+                                <div class="form-label-group-wrapper">
+                                    <div class="form-label-group">
+                                        @Html.TextBoxFor(x => x.DateOfBirth, new { @class = "form-control" })
+                                        @Html.LabelFor(m => m.DateOfBirth)
+                                    </div>
+                                    <div class="invalid-field">
+                                        @Html.ValidationMessageFor(x => x.DateOfBirth)
+                                    </div>
+                                </div>
+
                                 <div class="form-label-group-wrapper">
                                     <div class="form-label-group">
                                         @Html.TextBoxFor(m => m.Password, new { @class = "form-control", required = "required", aria_label = "password", aria_describedby = "password", placeholder = "password", type = "password" })
@@ -65,6 +86,14 @@
 </body>
 
 </html>
+
+@section Scripts {
+    <script>
+        $('document').ready(function () {
+            $('#DateOfBirth').datepicker({ dateFormat: 'dd/mm/yy' });
+        })
+    </script>
+}
 
 
 
