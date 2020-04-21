@@ -26,7 +26,6 @@ namespace Authentication.Controllers
         private readonly IClientStore _clientStore;
         private readonly UserManager<PlatformUser> _userManager;
         private readonly IConfiguration _configuration;
-        private readonly UrlEncoder _urlEncoder;
         private readonly IAuthWebApiClient _authWebApiClient;
 
         public AccountController(
@@ -35,7 +34,6 @@ namespace Authentication.Controllers
             IClientStore clientStore,
             UserManager<PlatformUser> userManager,
             IConfiguration configuration,
-            UrlEncoder urlEncoder,
             IAuthWebApiClient authWebApiClient
         )
         {
@@ -44,7 +42,6 @@ namespace Authentication.Controllers
             _clientStore = clientStore;
             _userManager = userManager;
             _configuration = configuration;
-            _urlEncoder = urlEncoder;
             _authWebApiClient = authWebApiClient;
     }
 
@@ -127,41 +124,35 @@ namespace Authentication.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            var existingUser = await _loginService.FindByUsername(model.Email);
+            var user = await _loginService.FindByUsername(model.Email);
 
-            if (ModelState.IsValid && existingUser == null)
+            if (ModelState.IsValid)
             {
-                var user = new PlatformUser
+                var userObj = new PlatformUser
                 {
                     UserName = model.Email,
                     Email = model.Email
                 };
 
-                var result = await _userManager.CreateAsync(user, model.Password);
-
-                var userId = await _loginService.FindByUsername(model.Email);
-
-                // Save today's date.
-                var today = DateTime.Today;
-                // Calculate the age.
-                var age = today.Year - model.DateOfBirth.Year;
-                // Go back to the year the person was born in case of a leap year
-                if (model.DateOfBirth.Date > today.AddYears(-age)) age--;
-
-                await _authWebApiClient.CreateProfile(new Domain.Dto.RegisterDto
-                {
-                    Id = userId.Id,
-                    Name = model.Name,
-                    DateOfBirth = model.DateOfBirth,
-                    Age = age,
-                    Email = model.Email
-                });
+                var result = await _userManager.CreateAsync(userObj, model.Password);
 
                 if (result.Succeeded)
                 {
+                    var today = DateTime.Today;
+                    var age = today.Year - model.DateOfBirth.Year;
+                    if (model.DateOfBirth.Date > today.AddYears(-age)) age--;
+
+                    await _authWebApiClient.CreateProfile(new Domain.Dto.RegisterDto
+                    {
+                        Id = user.Id,
+                        Name = model.Name,
+                        DateOfBirth = model.DateOfBirth,
+                        Age = age,
+                        Email = model.Email
+                    });
+
                     return RedirectToAction("Login", "Account");
                 }
-
                 if (result.Errors.Count() > 0)
                 {
                     AddErrors(result);
@@ -169,26 +160,13 @@ namespace Authentication.Controllers
                     return View(model);
                 }
             }
-            if (existingUser != null)
+            else if (user != null)
             {
                 ModelState.AddModelError("Email", Strings.DuplicateEmail);
                 return View();
             }
 
-            if (model.ReturnUrl != null)
-            {
-                if (HttpContext.User.Identity.IsAuthenticated)
-                {
-                    return Redirect(model.ReturnUrl);
-                }
-                else if (ModelState.IsValid)
-                {
-                    return RedirectToAction("login", "account", new { model.ReturnUrl });
-                }
-                return View(model);
-            }
-
-            return RedirectToAction("Login", "Account");
+            return View();
         }
 
 

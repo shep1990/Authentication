@@ -14,14 +14,16 @@ using Authentication.Domain.Services;
 using IdentityServer4.EntityFramework.DbContexts;
 using Authentication.Data;
 using Authetication.WebApiClient;
+using Microsoft.Extensions.Logging;
 
 namespace Authentication
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, ILoggerFactory loggerFactory)
         {
             Configuration = configuration;
+            loggerFactory.AddLog4Net("log4net.config");
         }
 
         public IConfiguration Configuration { get; }
@@ -90,17 +92,8 @@ namespace Authentication
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env)
         {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-                app.UseDatabaseErrorPage();
-            }
-            else
-            {
-                app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
-            }
+
+            app.UseExceptionHandler("/Error/Exception");
 
 
             app.UseHsts();

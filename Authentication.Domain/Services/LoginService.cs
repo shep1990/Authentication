@@ -19,9 +19,23 @@ namespace Authentication.Domain.Services
             _signInManager = signInManager;
         }
 
-        public async Task<PlatformUser> FindByUsername(string user)
+        public async Task<PlatformUser> FindByUsername(string username)
         {
-            return await _userManager.FindByEmailAsync(user);
+            var user = new PlatformUser();
+
+            if(username != null)
+            {
+                try
+                {
+                    user = await _userManager.FindByEmailAsync(username);
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
+            }
+
+            return user;
         }
 
         public async Task<bool> ValidateCredentials(PlatformUser user, string password)
@@ -34,9 +48,16 @@ namespace Authentication.Domain.Services
             return _signInManager.SignInAsync(user, true);
         }
 
-        public Task SignInAsync(PlatformUser user, AuthenticationProperties properties, string authenticationMethod = null)
+        public async Task SignInAsync(PlatformUser user, AuthenticationProperties properties, string authenticationMethod = null)
         {
-            return _signInManager.SignInAsync(user, properties, authenticationMethod);
+            try
+            {
+                await _signInManager.SignInAsync(user, properties, authenticationMethod);
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
         }
 
         public async Task<SignInResult> PasswordSignInAsync(PlatformUser user, string password, bool lockoutUser)
