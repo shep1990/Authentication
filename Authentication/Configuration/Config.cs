@@ -11,7 +11,11 @@ namespace Authentication.Configuration
     {
         public static IEnumerable<ApiResource> GetApis()
         {
-            return new List<ApiResource>();
+            return new List<ApiResource>
+            {
+                new ApiResource("socialNetwork.Profile", "Social Network Profile"),
+                new ApiResource("socialNetwork.Status", "Social Network Status")
+            };
         }
 
         public static IEnumerable<IdentityResource> GetResources()
@@ -27,7 +31,6 @@ namespace Authentication.Configuration
         {
             return new List<Client>
             {
-                // WordSynk Network Client
                 new Client
                 {
                     ClientId = "DjValeting",
@@ -55,6 +58,42 @@ namespace Authentication.Configuration
                     {
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Profile
+                    },
+                    AccessTokenLifetime = 60*60*2, // 2 hours
+                    IdentityTokenLifetime= 60*60*2 // 2 hours
+                },
+                new Client
+                {
+                    ClientId = "SocialNetwork",
+                    ClientName = "Social Network Auth Client",
+                    ClientSecrets = new List<Secret>
+                    {
+                        new Secret("secret".Sha256())
+                    },
+                    ClientUri = $"{clientsUrl["SocialNetwork"]}",
+                    AllowedGrantTypes = GrantTypes.Implicit,
+                    AllowAccessTokensViaBrowser = false,
+                    RequireConsent = false,
+                    AllowOfflineAccess = true,
+                    AlwaysSendClientClaims = true,
+                    AlwaysIncludeUserClaimsInIdToken = true,
+                    RedirectUris = new List<string>
+                    {
+                        $"{clientsUrl["SocialNetwork"]}/signin-oidc"
+                    },
+                    PostLogoutRedirectUris = new List<string>
+                    {
+                        $"{clientsUrl["SocialNetwork"]}/signout-callback-oidc"
+                    },
+                    AllowedCorsOrigins = new List<string>{
+                        $"{clientsUrl["SocialNetwork"]}"
+                    },
+                    AllowedScopes = new List<string>
+                    {
+                        IdentityServerConstants.StandardScopes.OpenId,
+                        IdentityServerConstants.StandardScopes.Profile,
+                        "socialNetwork.Profile",
+                        "socialNetwork.Status"
                     },
                     AccessTokenLifetime = 60*60*2, // 2 hours
                     IdentityTokenLifetime= 60*60*2 // 2 hours

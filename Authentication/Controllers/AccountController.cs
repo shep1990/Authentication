@@ -13,6 +13,7 @@ using IdentityServer4.Services;
 using IdentityServer4.Stores;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
@@ -141,6 +142,8 @@ namespace Authentication.Controllers
                     var today = DateTime.Today;
                     var age = today.Year - model.DateOfBirth.Year;
                     if (model.DateOfBirth.Date > today.AddYears(-age)) age--;
+
+                    user = await _loginService.FindByUsername(model.Email);
 
                     await _authWebApiClient.CreateProfile(new Domain.Dto.RegisterDto
                     {

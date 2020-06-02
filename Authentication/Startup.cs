@@ -42,6 +42,7 @@ namespace Authentication
                 )
             );
 
+
             //todo: set up auth api url
             services.AddTransient(x => AuthWebApiClientFactory.Create(Configuration.GetSection("AuthApi").Value));
 
@@ -87,6 +88,15 @@ namespace Authentication
                    });
            })
            .Services.AddTransient<IProfileService, ProfileService>();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("CorsPolicy",
+                    builder => builder.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials());
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -102,7 +112,6 @@ namespace Authentication
             app.UseIdentityServer();
 
             app.UseStaticFiles();
-
             app.UseAuthentication();
 
             app.UseMvc(routes =>
@@ -111,6 +120,8 @@ namespace Authentication
                     name: "default",
                     template: "{controller=Account}/{action=Login}/{id?}");
             });
+            app.UseCors("CorsPolicy");
+
 
             ConfigureDb(app);
         }

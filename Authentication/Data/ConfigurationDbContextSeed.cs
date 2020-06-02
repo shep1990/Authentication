@@ -20,6 +20,8 @@ namespace Authentication.Data
             var clientUrls = new Dictionary<string, string>();
 
             clientUrls.Add("DjValeting", configuration.GetValue<string>("DjValetingAuthClient"));
+            clientUrls.Add("SocialNetwork", configuration.GetValue<string>("SocialNetworkClient"));
+            clientUrls.Add("CurrencyConverter", configuration.GetValue<string>("CurrencyConverter"));
 
             if (!context.Clients.Any())
             {
