@@ -12,7 +12,7 @@ namespace Authetication.WebApiClient
 
         public async Task<RegisterDto> CreateProfile(RegisterDto registerViewModel)
         {
-            return await PostAsync<RegisterDto>(registerViewModel, $"/api/SignUp/SignUpConfirmation");
+            return await PostAsync<RegisterDto>(registerViewModel, $"/api/Profile/CreateProfile");
         }
     }
 }

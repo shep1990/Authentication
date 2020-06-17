@@ -1,22 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Mail;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using Authentication.Domain.Dto;
 using Authentication.Domain.Model;
 using Authentication.Domain.Services;
+using Authentication.Email;
 using Authentication.Models;
 using Authentication.Resources;
 using Authetication.WebApiClient;
 using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
+using MailKit.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
+using MimeKit;
+using MimeKit.Text;
 
 namespace Authentication.Controllers
 {
@@ -28,6 +35,8 @@ namespace Authentication.Controllers
         private readonly UserManager<PlatformUser> _userManager;
         private readonly IConfiguration _configuration;
         private readonly IAuthWebApiClient _authWebApiClient;
+        private readonly IEmailService _emailService;
+        private readonly IEmailConfiguration _emailConfiguration;
 
         public AccountController(
             ILoginService<PlatformUser> loginService,
@@ -35,7 +44,9 @@ namespace Authentication.Controllers
             IClientStore clientStore,
             UserManager<PlatformUser> userManager,
             IConfiguration configuration,
-            IAuthWebApiClient authWebApiClient
+            IAuthWebApiClient authWebApiClient,
+            IEmailService emailService,
+            IEmailConfiguration emailConfiguration
         )
         {
             _loginService = loginService;
@@ -44,6 +55,8 @@ namespace Authentication.Controllers
             _userManager = userManager;
             _configuration = configuration;
             _authWebApiClient = authWebApiClient;
+            _emailService = emailService;
+            _emailConfiguration = emailConfiguration;
     }
 
         [HttpGet]
@@ -139,20 +152,48 @@ namespace Authentication.Controllers
 
                 if (result.Succeeded)
                 {
-                    var today = DateTime.Today;
-                    var age = today.Year - model.DateOfBirth.Year;
-                    if (model.DateOfBirth.Date > today.AddYears(-age)) age--;
-
-                    user = await _loginService.FindByUsername(model.Email);
-
-                    await _authWebApiClient.CreateProfile(new Domain.Dto.RegisterDto
+                    try
                     {
-                        Id = user.Id,
-                        Name = model.Name,
-                        DateOfBirth = model.DateOfBirth,
-                        Age = age,
-                        Email = model.Email
-                    });
+                        var token = await _userManager.GenerateEmailConfirmationTokenAsync(userObj);
+                        var confirmationLink = Url.Action(nameof(ConfirmEmail), "Account", new { token, email = model.Email }, Request.Scheme);
+                        var message = new EmailMessage()
+                        {
+                            ToAddresses = new EmailAddress
+                            {
+                                Name = model.Name,
+                                Address = model.Email
+                            },
+                            FromAddresses = new EmailAddress
+                            {
+                                Name = "Social Network",
+                                Address = _emailConfiguration.Username
+                            },
+                            Content = confirmationLink,
+                            Subject = "Confirm Email"
+                        };
+
+                        _emailService.Send(message);
+
+                        var today = DateTime.Today;
+                        var age = today.Year - model.DateOfBirth.Year;
+                        if (model.DateOfBirth.Date > today.AddYears(-age)) age--;
+
+                        user = await _loginService.FindByUsername(model.Email);
+
+                        await _authWebApiClient.CreateProfile(new RegisterDto
+                        {
+                            Id = user.Id,
+                            Name = model.Name,
+                            DateOfBirth = model.DateOfBirth,
+                            Age = age,
+                            Email = model.Email
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                        throw ex;
+                    }
 
                     return RedirectToAction("Login", "Account");
                 }
@@ -163,13 +204,23 @@ namespace Authentication.Controllers
                     return View(model);
                 }
             }
-            else if (user != null)
+
+            ModelState.AddModelError("Email", Strings.DuplicateEmail);
+            return View(model);
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmEmail(string token, string email)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
             {
-                ModelState.AddModelError("Email", Strings.DuplicateEmail);
-                return View();
+                return View("Error");
             }
 
-            return View();
+            var result = await _userManager.ConfirmEmailAsync(user, token);
+            return View(result.Succeeded ? nameof(ConfirmEmail) : "Error");
         }
 
 

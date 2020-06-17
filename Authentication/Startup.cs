@@ -15,6 +15,8 @@ using IdentityServer4.EntityFramework.DbContexts;
 using Authentication.Data;
 using Authetication.WebApiClient;
 using Microsoft.Extensions.Logging;
+using System.Net.Mail;
+using Authentication.Email;
 
 namespace Authentication
 {
@@ -42,14 +44,29 @@ namespace Authentication
                 )
             );
 
+            services.AddTransient((serviceProvider) =>
+            {
+                var config = serviceProvider.GetRequiredService<IConfiguration>();
+                return new SmtpClient()
+                {
+                    Host = config.GetValue<string>("Email:Smtp:Host"),
+                    Port = config.GetValue<int>("Email:Smtp:Port"),
+                    UseDefaultCredentials = false,
+                    EnableSsl = true,
+                    DeliveryMethod = SmtpDeliveryMethod.Network
+                };
+            });
 
-            //todo: set up auth api url
             services.AddTransient(x => AuthWebApiClientFactory.Create(Configuration.GetSection("AuthApi").Value));
+            services.AddTransient<IEmailService, EmailService>();
+            services.AddTransient<ILoginService<PlatformUser>, LoginService>();
+            services.AddSingleton<IEmailConfiguration>(Configuration.GetSection("Email:Smtp").Get<EmailConfiguration>());
 
             services.AddIdentity<PlatformUser, PlatformRole>(options =>
             {
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(Convert.ToDouble(Configuration.GetSection("DefaultLockoutTimeSpanValue").Value));
                 options.Lockout.MaxFailedAccessAttempts = Convert.ToInt32(Configuration.GetSection("MaxFailedAccessAttemptValue").Value);
+                options.SignIn.RequireConfirmedEmail = true;
             })
             .AddEntityFrameworkStores<PlatformDbContext>()
             .AddDefaultTokenProviders();
@@ -57,8 +74,6 @@ namespace Authentication
             services.Configure<DataProtectionTokenProviderOptions>(o => o.TokenLifespan = TimeSpan.FromMinutes(Convert.ToInt32(Configuration.GetSection("TokenLifeSpan").Value)));
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
-
-            services.AddTransient<ILoginService<PlatformUser>, LoginService>();
 
             services.AddIdentityServer(x =>
             {
