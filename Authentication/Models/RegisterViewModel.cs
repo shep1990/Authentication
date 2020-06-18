@@ -9,21 +9,21 @@ namespace Authentication.Models
 {
     public class RegisterViewModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Email is required")]
+        [EmailAddress(ErrorMessage = "Please enter a valid email")]
         public string Email { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Name is required")]
         public string Name { get; set; }
 
-        [Required]
-        public DateTime DateOfBirth { get; set; }
+        [Required(ErrorMessage = "Date of birth is required")]
+        public DateTime? DateOfBirth { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]
         public string Password { get; set; }
 
-        [Required]
+        [Compare("Password", ErrorMessage = "Confirm password doesn't match, Type again")]
         [DataType(DataType.Password)]
         public string ConfirmPassword { get; set; }
 

@@ -17,62 +17,45 @@
                         <form method="post" action="@Url.Action("Register", "Account")" novalidate>
                             @Html.HiddenFor(x => x.ReturnUrl)
                             <fieldset class="auth-info">
-                                <div class="form-label-group-wrapper">
-                                    <div class="form-label-group">
-                                        @Html.TextBoxFor(m => m.Name, new { @class = "form-control", required = "required", aria_label = "email", aria_describedby = "name", placeholder = "Name" })
-                                        @Html.LabelFor(m => m.Name)
-                                    </div>
-                                    <div class="invalid-field">
-                                        @Html.ValidationMessageFor(x => x.Name)
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Name)
+                                    @Html.TextBoxFor(m => m.Name, new { @class = "form-control", required = "required", aria_label = "email", aria_describedby = "name", placeholder = "Name" })
+                                    <div class="invalid-feedback d-block">
+                                        @Html.ValidationMessageFor(m => m.Name)
                                     </div>
                                 </div>
 
-                                <div class="form-label-group-wrapper">
-                                    <div class="form-label-group">
-                                        @Html.TextBoxFor(m => m.Email, new { @class = "form-control", required = "required", aria_label = "email", aria_describedby = "email", placeholder = "Email", type = "email" })
-                                        @Html.LabelFor(m => m.Email)
-                                    </div>
-                                    <div class="invalid-field">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Email)
+                                    @Html.TextBoxFor(m => m.Email, new { @class = "form-control", required = "required", aria_label = "email", aria_describedby = "email", placeholder = "Email", type = "email" })
+                                    <div class="invalid-feedback d-block">
                                         @Html.ValidationMessageFor(x => x.Email)
                                     </div>
                                 </div>
 
-                                <div class="form-label-group-wrapper">
-                                    <div class="form-label-group">
-                                        @Html.TextBoxFor(x => x.DateOfBirth, new { @class = "form-control" })
-                                        @Html.LabelFor(m => m.DateOfBirth)
-                                    </div>
-                                    <div class="invalid-field">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.DateOfBirth)
+                                    @Html.TextBoxFor(x => x.DateOfBirth, new { @class = "form-control", required = "required", autocomplete = "off", placeholder = "Date of Birth" })
+                                    <div class="invalid-feedback d-block">
                                         @Html.ValidationMessageFor(x => x.DateOfBirth)
                                     </div>
                                 </div>
-
-                                <div class="form-label-group-wrapper">
-                                    <div class="form-label-group">
-                                        @Html.TextBoxFor(m => m.Password, new { @class = "form-control", required = "required", aria_label = "password", aria_describedby = "password", placeholder = "password", type = "password" })
-                                        @Html.LabelFor(m => m.Password)
-                                    </div>
-                                    <div class="invalid-field">
+                                
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Password)
+                                    @Html.TextBoxFor(m => m.Password, new { @class = "form-control", required = "required", aria_label = "password", aria_describedby = "password", placeholder = "password", type = "password" })
+                                    <div class="invalid-feedback d-block">
                                         @Html.ValidationMessageFor(x => x.Password)
                                     </div>
                                 </div>
 
-                                <div class="form-label-group-wrapper">
-                                    <div class="form-label-group">
-                                        @Html.TextBoxFor(m => m.ConfirmPassword, new { @class = "form-control", required = "required", aria_label = "confirmPassword", aria_describedby = "confirmPassword", placeholder = "confirmPassword", type = "password" })
-                                        @Html.LabelFor(m => m.ConfirmPassword)
-                                    </div>
-                                    <div class="invalid-field">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.ConfirmPassword)
+                                    @Html.TextBoxFor(m => m.ConfirmPassword, new { @class = "form-control", required = "required", aria_label = "confirmPassword", aria_describedby = "confirmPassword", placeholder = "Confirm Password", type = "password" })
+                                    <div class="invalid-feedback d-block">
                                         @Html.ValidationMessageFor(x => x.ConfirmPassword)
                                     </div>
                                 </div>
-
-                                <div class="form-label-group-wrapper">
-                                    <div class="form-check">
-                                        <input class="form-check-input" type="checkbox" name="privacyPolicy" id="privacyPolicy" value="privacyPolicy" required>
-                                    </div>
-                                </div>
-
 
                                 <button class="bttn bttn-primary bttn-submit" type="submit">Create Account</button>
                             </fieldset>

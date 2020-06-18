@@ -15,6 +15,7 @@ using Authetication.WebApiClient;
 using IdentityServer4.Models;
 using IdentityServer4.Services;
 using IdentityServer4.Stores;
+using log4net;
 using MailKit.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -37,6 +38,7 @@ namespace Authentication.Controllers
         private readonly IAuthWebApiClient _authWebApiClient;
         private readonly IEmailService _emailService;
         private readonly IEmailConfiguration _emailConfiguration;
+        private readonly ILog _logger = LogManager.GetLogger(typeof(AccountController));
 
         public AccountController(
             ILoginService<PlatformUser> loginService,
@@ -138,7 +140,7 @@ namespace Authentication.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
-            var user = await _loginService.FindByUsername(model.Email);
+            var result = new IdentityResult();
 
             if (ModelState.IsValid)
             {
@@ -148,7 +150,7 @@ namespace Authentication.Controllers
                     Email = model.Email
                 };
 
-                var result = await _userManager.CreateAsync(userObj, model.Password);
+                result = await _userManager.CreateAsync(userObj, model.Password);
 
                 if (result.Succeeded)
                 {
@@ -175,37 +177,35 @@ namespace Authentication.Controllers
                         _emailService.Send(message);
 
                         var today = DateTime.Today;
-                        var age = today.Year - model.DateOfBirth.Year;
-                        if (model.DateOfBirth.Date > today.AddYears(-age)) age--;
+                        var age = today.Year - model.DateOfBirth.Value.Year;
+                        if (model.DateOfBirth.Value.Date > today.AddYears(-age)) age--;
 
-                        user = await _loginService.FindByUsername(model.Email);
+                        var user = await _loginService.FindByUsername(model.Email);
 
                         await _authWebApiClient.CreateProfile(new RegisterDto
                         {
                             Id = user.Id,
                             Name = model.Name,
-                            DateOfBirth = model.DateOfBirth,
+                            DateOfBirth = model.DateOfBirth.Value,
                             Age = age,
                             Email = model.Email
                         });
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        _logger.Error(string.Format("There was an error while creating the user profile {0}", ex.Message));
                         throw ex;
                     }
 
                     return RedirectToAction("Login", "Account");
                 }
+
                 if (result.Errors.Count() > 0)
                 {
                     AddErrors(result);
-
-                    return View(model);
                 }
-            }
 
-            ModelState.AddModelError("Email", Strings.DuplicateEmail);
+            }
             return View(model);
         }
 
@@ -253,7 +253,10 @@ namespace Authentication.Controllers
         {
             foreach (var error in result.Errors)
             {
-                ModelState.AddModelError(string.Empty, error.Description);
+                if(error.Code == "DuplicateUserName")
+                {
+                    ModelState.AddModelError("Email", error.Description);
+                }
             }
         }
     }
