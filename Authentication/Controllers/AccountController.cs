@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Mail;
 using System.Text.Encodings.Web;
@@ -85,37 +86,43 @@ namespace Authentication.Controllers
             {
                 var user = await _loginService.FindByUsername(model.Email);
                 var login = new Microsoft.AspNetCore.Identity.SignInResult();
-
-                if (user != null)
-                {
-                    login = await _loginService.PasswordSignInAsync(user, model.Password, Convert.ToBoolean(_configuration.GetSection("LockOutIfCredentialsAreIncorrect").Value));
-                }
-                if (login.Succeeded)
-                {
-                    var tokenLifetime = _configuration.GetValue("TokenLifetimeMinutes", 120);
-
-                    var props = new AuthenticationProperties
+                try {
+                    if (user != null)
                     {
-                        ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(tokenLifetime),
-                        AllowRefresh = true,
-                        RedirectUri = model.ReturnUrl
-                    };
-
-                    await _loginService.SignInAsync(user, props);
-
-                    if (_interaction.IsValidReturnUrl(model.ReturnUrl))
+                        login = await _loginService.PasswordSignInAsync(user, model.Password, Convert.ToBoolean(_configuration.GetSection("LockOutIfCredentialsAreIncorrect").Value));
+                    }
+                    if (login.Succeeded)
                     {
-                        return Redirect(model.ReturnUrl);
+                        var tokenLifetime = _configuration.GetValue("TokenLifetimeMinutes", 120);
+
+                        var props = new AuthenticationProperties
+                        {
+                            ExpiresUtc = DateTimeOffset.UtcNow.AddMinutes(tokenLifetime),
+                            AllowRefresh = true,
+                            RedirectUri = model.ReturnUrl
+                        };
+
+                        await _loginService.SignInAsync(user, props);
+
+                        if (_interaction.IsValidReturnUrl(model.ReturnUrl))
+                        {
+                            return Redirect(model.ReturnUrl);
+                        }
+                    }
+
+                    if (login.IsLockedOut)
+                    {
+                        ModelState.AddModelError("Password", String.Format(Strings.NumberOfLoginAttemptsExceeded, _configuration.GetSection("DefaultLockoutTimeSpanValue").Value));
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("Password", Strings.EmailAndPasswordIncorrect);
                     }
                 }
-
-                if (login.IsLockedOut)
+                catch (Exception ex)
                 {
-                    ModelState.AddModelError("Password", String.Format(Strings.NumberOfLoginAttemptsExceeded, _configuration.GetSection("DefaultLockoutTimeSpanValue").Value));
-                }
-                else
-                {
-                    ModelState.AddModelError("Password", Strings.EmailAndPasswordIncorrect);
+                    _logger.Error(string.Format("There was an error while logging in {0}", ex.Message));
+                    throw ex;
                 }
             }
 
@@ -253,9 +260,13 @@ namespace Authentication.Controllers
         {
             foreach (var error in result.Errors)
             {
-                if(error.Code == "DuplicateUserName")
+                if (error.Code.Contains("UserName"))
                 {
                     ModelState.AddModelError("Email", error.Description);
+                }
+                else if (error.Code.Contains("Password"))
+                {
+                    ModelState.AddModelError("Password", error.Description);
                 }
             }
         }
