@@ -14,7 +14,8 @@ namespace Authentication.Configuration
             return new List<ApiResource>
             {
                 new ApiResource("socialNetwork.Profile", "Social Network Profile"),
-                new ApiResource("socialNetwork.Status", "Social Network Status")
+                new ApiResource("socialNetwork.Status", "Social Network Status"),
+                new ApiResource("socialNetwork.Friends", "Social Network Friends")
             };
         }
 
@@ -93,7 +94,8 @@ namespace Authentication.Configuration
                         IdentityServerConstants.StandardScopes.OpenId,
                         IdentityServerConstants.StandardScopes.Profile,
                         "socialNetwork.Profile",
-                        "socialNetwork.Status"
+                        "socialNetwork.Status",
+                        "socialNetwork.Friends"
                     },
                     AccessTokenLifetime = 60*60*2, // 2 hours
                     IdentityTokenLifetime= 60*60*2 // 2 hours

@@ -156,7 +156,10 @@ namespace Authentication
                         .Wait();
                 }
             }
-            catch { }
+            catch ( Exception ex )
+            {
+                throw ex;
+            }
         }
     }
 }
